@@ -4,7 +4,21 @@
 
 **Project Name:** Executive Daily Briefing  
 
-This project is an **AI-driven executive health monitoring system** that consolidates data from multiple business and operational systems — CRM (HubSpot/Salesforce), Engineering (GitHub), Marketing, and Ops (Datadog). The workflow summarizes critical metrics, flags potential issues, and automatically triggers notifications based on severity.
+> Have you ever seen how executives, engineers, or business managers start their day?
+> 
+> 
+> They check CRM dashboards for sales, GitHub for open issues, Datadog for critical system alerts, and marketing platforms for campaign performance.
+> 
+> Each system tells a piece of the story, but the **full picture is missing**.
+> 
+> Important issues get buried. Decisions get delayed. Teams scramble. Valuable time is lost.
+> 
+> What if there was a way to **see the health of the entire business at a glance — with AI that decides what matters most**?
+>
+
+It **automates the work executives shouldn’t be doing**: fetching data from multiple systems, analyzing it, summarizing key insights, and flagging critical issues. This project is an **AI-driven executive health monitoring system** that consolidates data from multiple business and operational systems — CRM (HubSpot/Salesforce), Engineering (GitHub), Marketing, and Ops (Datadog). 
+
+And it goes further — it **decides who should be notified**, ensuring action happens immediately, without anyone digging through dashboards.
 
 The goal is to **turn raw data into actionable insights**, allowing executives to quickly understand the overall health of their company and prioritize actions without manually checking multiple dashboards.
 
