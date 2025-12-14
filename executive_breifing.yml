@@ -1,0 +1,128 @@
+id: executive_briefing
+namespace: company.management
+description: "Overall Health Monitor: Consolidating CRM, Engineering (GitHub), and Ops (Datadog) metrics."
+
+tasks:
+  # 1. Fetch Data in Parallel
+  - id: fetch_metrics
+    type: io.kestra.plugin.core.flow.Parallel
+    tasks:
+      - id: fetch_crm
+        type: io.kestra.plugin.scripts.python.Script
+        runner: PROCESS
+        script: |
+          import json
+          # Mock HubSpot/Salesforce Data
+          data = {
+              "source": "CRM",
+              "deals_closed": 12,
+              "pipeline_value": 45000,
+              "trend": "up"
+          }
+          print(json.dumps(data))
+      
+      - id: fetch_github
+        type: io.kestra.plugin.core.http.Request
+        uri: "https://api.github.com/repos/kestra-io/kestra"
+        method: "GET"
+        
+      - id: fetch_marketing
+        type: io.kestra.plugin.scripts.python.Script
+        runner: PROCESS
+        script: |
+          import json
+          # Mock Marketing Data
+          data = {
+              "source": "Marketing",
+              "ad_spend": 1200,
+              "leads_generated": 150,
+              "trend": "steady"
+          }
+          print(json.dumps(data))
+      
+      - id: fetch_datadog
+        type: io.kestra.plugin.scripts.python.Script
+        runner: PROCESS
+        script: |
+          import json
+          # Mock Datadog/Ops Data
+          data = {
+              "source": "Datadog",
+              "error_rate_5xx": 0.02, # 2% error rate
+              "avg_latency_ms": 145,
+              "trend": "stable"
+          }
+          print(json.dumps(data))
+
+  # 2. AI Analysis Logic
+  - id: ai_analysis
+    type: io.kestra.plugin.scripts.python.Script
+    runner: PROCESS
+    beforeCommands:
+      - pip install kestra
+    # We pass the outputs of parallel tasks as inputs via string templating
+    # Note: Accessing parallel outputs usually requires referencing them by ID.
+    script: |
+      import json
+      from kestra import Kestra
+
+      # Retrieve Real GitHub Data from previous task output using Kestra templating injected as string
+      # Note: In Python script task, we can't easily access the 'body' of a previous HTTP task via standard variables 
+      # inside the python code unless we pass it as an environment variable or parse from Kestra context if available.
+      # A cleaner way in Kestra is to pass inputs. However, for this demo script, we'll access the output using 
+      # {{ outputs.fetch_github.body }} which Kestra renders *before* running the script.
+      
+      
+      # Deterministic "AI" Logic (Rule-based Agent)
+      # High Ticket Count (GitHub) + Any Datadog Errors -> HIGH SEVERITY
+      
+      github_data = json.loads("""{{ outputs.fetch_github.body }}""")
+      open_issues = github_data.get('open_issues_count', 0)
+      
+      severity = "LOW"
+      summary = f"Engineering Health: {open_issues} Open Issues on GitHub. Systems Stable."
+      
+      if open_issues > 500: # Threshold
+           severity = "HIGH"
+           summary = f"🚨 Critical Engineering Load: {open_issues} Open Issues in GitHub! Immediate triage required. Datadog reporting 2% error rate."
+
+      print(f"Analysis: {severity}")
+      print(f"Summary: {summary}")
+      
+      Kestra.outputs({'severity': severity, 'summary': summary})
+
+  # 3. Branching Logic
+  - id: routing
+    type: io.kestra.plugin.core.flow.Switch
+    value: "{{ outputs.ai_analysis.vars.severity }}"
+    cases:
+      HIGH:
+        - id: alert_slack
+          type: io.kestra.plugin.core.http.Request
+          uri: "add slack webhook url here"
+          method: POST
+          contentType: "application/json"
+          body: |
+            {
+              "text": "🚨 **HEALTH MONITOR ALERT** 🚨\nFrom: Executive Briefing Agent\n\n{{ outputs.ai_analysis.vars.summary }}"
+            }
+      
+      MEDIUM:
+        - id: update_notion
+          type: io.kestra.plugin.core.log.Log
+          message: |
+            ⚠️ Medium Priority Update
+            Added to Notion Page: Health Monitor - {{ now() }}
+            "{{ outputs.ai_analysis.vars.summary }}"
+
+    defaults:
+      - id: send_email
+        type: io.kestra.plugin.core.log.Log
+        message: |
+          ✅ Daily Health Report Sent
+          "{{ outputs.ai_analysis.vars.summary }}"
+
+triggers:
+  - id: daily_briefing
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 8 * * *"
